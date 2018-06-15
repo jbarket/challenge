@@ -1,5 +1,6 @@
 import '../messages/envelope';
 import 'pseudo/floorStatus';
+import 'pseudo/motors';
 
 class Elevator {
 
@@ -20,7 +21,7 @@ class Elevator {
 
         /* We'll start assuming that we're in the right place. */
         this.floorsRequested = floorsCurrent;
-        this.floorsLastMove = null;
+        this.occupied = false;
     }
 
     /* To make the math simpler, we'll expect that the floors will be specified in human friendly format, rather
@@ -39,6 +40,9 @@ class Elevator {
             return new Envelope("InvalidFloor", "That floor is too low. Look for basement support in an upcoming release.")
         }
 
+        this.floorsRequested = floor;
+        Motors.move(this.floorsRequested);
+
         return true;
     }
 
@@ -49,7 +53,7 @@ class Elevator {
     setFloor(floor) {
 
         /* We may receive multiple signals that we are at the same floor. There's nothing to record for this. */
-        if (this.floorsCurrent == floor) {
+        if (this.floorsCurrent === floor) {
             return;
         }
 
@@ -60,7 +64,7 @@ class Elevator {
 
         this.floorsCurrent = floor;
 
-        if (this.floorsCurrent == this.floorsRequested) {
+        if (this.floorsCurrent === this.floorsRequested) {
             this.tripsMade += 1;
         }
     }    
