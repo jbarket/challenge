@@ -1,4 +1,5 @@
 import 'elevator';
+import 'pseudo/actors';
 
 class ElevatorBank {
     constructor(floorsTotal, numElevators = 1) {
@@ -27,12 +28,21 @@ class ElevatorBank {
         return new Elevator(this.floorsTotal, 1, 0, 0)
     }
 
+    decomissionElevator(id) {
+        this.elevators = this.elevators.filter(e => e.id !== id);
+    }
+    
+    request(floor) {
+        var elevator = this.findElevator(floor);
+        Actors.tell(new Envelope("MoveElevator", { id: elevator.id, floor: floor }));
+    }
+
     /* We have three possibilities: 
         1. There is an elevator on this floor already.
         2. There is an occupied elevator about to pass this floor.
         3. We just get the closest unoccupied elevator */
 
-    request(floor) {
+    findElevator(floor) {
         /* Unoccupied elevator on this floor already */
         const waitingElevator = this.elevators.filter(e => e.floorsCurrent === floor && !e.occupied);
 

@@ -1,6 +1,7 @@
 import '../messages/envelope';
 import 'pseudo/floorStatus';
 import 'pseudo/motors';
+import 'pseudo/actors';
 
 class Elevator {
 
@@ -9,11 +10,12 @@ class Elevator {
     a failure without losing vital information like how many trips have been made
     between services */
     
-    constructor(floorsTotal, floorsCurrent = 1, tripsMade = 0, floorsPassed = 0) {
+    constructor(floorsTotal, id, floorsCurrent = 1, tripsMade = 0, floorsPassed = 0) {
         if (!floorsTotal) {
             throw "Elevator did not receive required parameter floorsTotal. It is unsafe to run without knowing this.";
         }
 
+        this.id = id; 
         this.floorsTotal = floorsTotal;
         this.floorsCurrent = floorsCurrent;
         this.tripsMade = tripsMade;
@@ -27,7 +29,7 @@ class Elevator {
     /* To make the math simpler, we'll expect that the floors will be specified in human friendly format, rather
     than starting at 0. */
 
-    move(floor) {
+    move(floor, userRequested = false) {
         if (!Number.isInteger(floor)) {
             return new Envelope("InvalidFloor", "You must specify a whole number for the floor.")
         }
@@ -41,9 +43,14 @@ class Elevator {
         }
 
         this.floorsRequested = floor;
+        Actors.tell(new Envelope("DoorClose", { id: this.id }));
         Motors.move(this.floorsRequested);
 
-        return true;
+        /* Elevators move because the Bank requested them or because a user told them to.
+        We're assuming any elevator where a user pushed the button is occupied */
+        if (userRequested) {
+            this.occupied = true;
+        }
     }
 
     /* For this to be accurate, we have to be able to retrieve the floor via instrumentation, like a switch that will be
@@ -63,10 +70,17 @@ class Elevator {
         this.floorsPassed += abs(this.floorsCurrent - floor);
 
         this.floorsCurrent = floor;
+        Actors.tell(new Envelope("ChangedFloor", { id: this.id, floor: this.floorsCurrent }));
 
         if (this.floorsCurrent === this.floorsRequested) {
             this.tripsMade += 1;
+            this.occupied = false;
+
+            Actors.tell(new Envelope("DoorOpen", { id: this.id }));
+
+            if (this.tripsMade >= 100) {
+                Actors.tell(new Envelope("DecommissionElevator", { id: this.id }));
+            }
         }
-    }    
-    
+    }
 }
