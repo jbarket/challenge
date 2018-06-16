@@ -1,6 +1,21 @@
 import 'elevator';
 import 'pseudo/actors';
 
+/* Bank actor mapping is roughly:
+
+    "DecomissionElevator" => decomissionElevator(message.id);
+    "InvalidFloor" => email somebody because things have gone real wrong.
+    
+    It probably receives these too as well, but the interaction is
+    unknown. We could just console.log this out, but it seems more
+    likely that we'd want a third actor to report the active state of
+    doors, elevators, etc for some analytics:
+
+    "ChangedFloor"
+    "DoorClose"
+    "DoorOpen"
+*/
+
 class ElevatorBank {
     constructor(floorsTotal, numElevators = 1) {
         if (!floorsTotal) {
@@ -30,10 +45,19 @@ class ElevatorBank {
 
     decomissionElevator(id) {
         this.elevators = this.elevators.filter(e => e.id !== id);
+
+        if (this.elevators.length === 0) {
+            throw "There are no remaining elevators. Please call maintainence.";
+        }
     }
     
     request(floor) {
         var elevator = this.findElevator(floor);
+
+        if (!elevator) {
+            throw "There is no elevator that can fill this request.";
+        }
+
         Actors.tell(new Envelope("MoveElevator", { id: elevator.id, floor: floor }));
     }
 

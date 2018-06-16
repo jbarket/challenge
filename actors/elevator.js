@@ -3,6 +3,11 @@ import 'pseudo/floorStatus';
 import 'pseudo/motors';
 import 'pseudo/actors';
 
+/* Elevator actor mapping is roughly:
+
+   "MoveElevator" => move(message.floor, false);
+*/
+
 class Elevator {
 
     /* We'll take all information necessary in the constructor. This way, if we
@@ -29,7 +34,7 @@ class Elevator {
     /* To make the math simpler, we'll expect that the floors will be specified in human friendly format, rather
     than starting at 0. */
 
-    move(floor, userRequested = false) {
+    move(floor, userRequested = true) {
         if (!Number.isInteger(floor)) {
             return new Envelope("InvalidFloor", "You must specify a whole number for the floor.")
         }
